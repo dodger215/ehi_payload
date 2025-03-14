@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pay Point</title>
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #fff8f8 0%, #fff0f0 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* Container Styles */
+        .payment-container {
+            background: rgba(255, 255, 255, 0.98);
+            padding: 3rem;
+            border-radius: 24px;
+            box-shadow: 0 16px 40px rgba(216, 29, 29, 0.08);
+            width: 100%;
+            max-width: 720px;
+            margin: 20px;
+            border: 1px solid rgba(255, 200, 200, 0.2);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+        }
+
+        .payment-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, 
+                rgba(255, 68, 68, 0.03) 0%, 
+                rgba(255, 224, 224, 0.05) 100%);
+            z-index: 0;
+        }
+
+        /* Header Styles */
+        .payment-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .payment-header h1 {
+            color: #B91C1C;
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+            font-weight: 800;
+            letter-spacing: -0.75px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .payment-header h1::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: #B91C1C;
+            border-radius: 2px;
+        }
+
+        /* Form Styles */
+        .payment-form {
+            display: grid;
+            gap: 2.25rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.8rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            position: relative;
+        }
+
+        .form-group h5 {
+            color: #B91C1C;
+            font-size: 1.5rem;
+            padding-bottom: 1rem;
+            margin: 1.5rem 0 1rem;
+            position: relative;
+            border-bottom: 2px solid #ffe5e5;
+            font-weight: 600;
+        }
+
+        .form-group h5::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 60px;
+            height: 2px;
+            background: #B91C1C;
+        }
+
+        label {
+            color: #7f1d1d;
+            font-weight: 600;
+            font-size: 0.92rem;
+            padding-left: 4px;
+            letter-spacing: 0.3px;
+        }
+
+        input, select {
+            padding: 1.1rem;
+            border: 2px solid #ffe5e5;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 245, 245, 0.9);
+            color: #7f1d1d;
+            letter-spacing: 0.2px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #B91C1C;
+            box-shadow: 0 0 0 4px rgba(185, 28, 28, 0.1);
+            background: white;
+        }
+
+        .full-width {
+            grid-column: span 2;
+        }
+
+        /* Button Styles */
+        .submit-btn {
+            background: linear-gradient(145deg, #B91C1C 0%, #7f1d1d 100%);
+            color: white;
+            padding: 1.5rem;
+            border: none;
+            border-radius: 14px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-top: 2rem;
+            box-shadow: 0 6px 20px rgba(216, 29, 29, 0.2);
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(185, 28, 28, 0.3);
+        }
+
+        .submit-btn:active {
+            transform: translateY(1px);
+            box-shadow: 0 4px 15px rgba(185, 28, 28, 0.2);
+        }
+
+        /* Loading animation */
+        .submit-btn .btn-text {
+            position: relative;
+            z-index: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-dots {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+        }
+
+        .loading-dots::after {
+            content: "•";
+            animation: dots 1.4s infinite;
+            color: white;
+            font-size: 1.8rem;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: "•"; }
+            40% { content: "••"; }
+            60% { content: "•••"; }
+            80%, 100% { content: "•"; }
+        }
+
+        /* Processing state */
+        .submit-btn.processing, .badge.processing {
+            cursor: progress;
+            pointer-events: none;
+        }
+
+        .submit-btn.processing .btn-text {
+            opacity: 0;
+        }
+
+        .submit-btn.processing .loading-dots {
+            display: block;
+        }
+
+        /* Payment Options Styles */
+        .payment-options {
+            position: relative;
+            margin: 2rem 0;
+        }
+
+        .section-title {
+            color: #1E3A8A;
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+            border-left: 4px solid #B91C1C;
+            padding-left: 1rem;
+            font-weight: 600;
+        }
+
+        /* Search Field Styles */
+        .search-container {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #7f1d1d;
+            font-size: 1.2rem;
+            pointer-events: none;
+        }
+
+        .search-field {
+            width: 100%;
+            padding: 1rem 1rem 1rem 2.8rem;
+            border: 2px solid #ffe5e5;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            background: rgba(255, 245, 245, 0.9);
+            color: #7f1d1d;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .search-field:focus {
+            outline: none;
+            border-color: #B91C1C;
+            box-shadow: 0 0 0 4px rgba(185, 28, 28, 0.1);
+            background: white;
+        }
+
+        .search-field::placeholder {
+            color: #7f1d1d;
+            opacity: 0.6;
+        }
+
+        /* Highlighted search field */
+        .search-field.highlighted {
+            background: rgba(255, 235, 235, 1);
+            border-color: #B91C1C;
+            color: #B91C1C;
+            font-weight: 600;
+        }
+
+        .auto-generated-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 2px solid #ffe5e5;
+            border-radius: 12px;
+            background: rgba(255, 245, 245, 0.9);
+        }
+
+        .auto-generated-list::-webkit-scrollbar {
+            width: 8px;
+            background: #ffe5e5;
+            border-radius: 0 12px 12px 0;
+        }
+
+        .auto-generated-list::-webkit-scrollbar-thumb {
+            background: #B91C1C;
+            border-radius: 4px;
+        }
+
+        .payment-link {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            margin: 0;
+            border-radius: 0;
+            background: transparent;
+            color: #7f1d1d;
+            border-bottom: 1px solid #ffe5e5;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .payment-link:last-child {
+            border-bottom: none;
+        }
+
+        .payment-link:hover {
+            background: rgba(185, 28, 28, 0.05);
+        }
+
+        .link-icon {
+            font-size: 1.2rem;
+            margin-right: 1rem;
+            width: 30px;
+            text-align: center;
+        }
+
+        .badge {
+            margin-left: auto;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            background: #B91C1C;
+            color: white;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            border: none;
+        }
+
+        .badge:hover {
+            background: #7f1d1d;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(185, 28, 28, 0.3);
+        }
+
+        .badge:active {
+            transform: translateY(1px);
+            box-shadow: none;
+        }
+
+        /* Badge loading animation */
+        .badge .badge-text {
+            position: relative;
+            z-index: 1;
+        }
+
+        .badge .badge-dots {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+        }
+
+        .badge .badge-dots::after {
+            content: "•";
+            animation: dots 1.4s infinite;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .badge.processing .badge-text {
+            opacity: 0;
+        }
+
+        .badge.processing .badge-dots {
+            display: block;
+        }
+
+        /* Selected payment option */
+        .payment-link.selected {
+            background: rgba(185, 28, 28, 0.1);
+            border-left: 3px solid #B91C1C;
+        }
+
+        /* No results message */
+        .no-results {
+            padding: 1.5rem;
+            text-align: center;
+            color: #7f1d1d;
+            font-style: italic;
+            display: none;
+        }
+
+        /* Payment modal */
+        .payment-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            position: relative;
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #ffe5e5;
+        }
+
+        .modal-title {
+            color: #B91C1C;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #7f1d1d;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s ease;
+        }
+
+        .close-modal:hover {
+            background: rgba(185, 28, 28, 0.1);
+        }
+
+        .modal-body {
+            margin-bottom: 1.5rem;
+        }
+
+        .payment-info {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            background: rgba(255, 245, 245, 0.9);
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+
+        .payment-info .link-icon {
+            font-size: 1.5rem;
+            margin-right: 1rem;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(185, 28, 28, 0.1);
+        }
+
+        .payment-info-text {
+            flex: 1;
+        }
+
+        .payment-info-title {
+            font-weight: 700;
+            color: #7f1d1d;
+            margin-bottom: 0.25rem;
+        }
+
+        .payment-info-subtitle {
+            font-size: 0.9rem;
+            color: #7f1d1d;
+            opacity: 0.8;
+        }
+
+        .staff-id-display {
+            font-weight: 600;
+            color: #B91C1C;
+            margin-top: 0.5rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        .modal-btn {
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .modal-btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .modal-btn-secondary:hover {
+            background: #e5e5e5;
+        }
+
+        .modal-btn-primary {
+            background: linear-gradient(145deg, #B91C1C 0%, #7f1d1d 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(185, 28, 28, 0.2);
+        }
+
+        .modal-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(185, 28, 28, 0.3);
+        }
+
+        .modal-btn-primary:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 8px rgba(185, 28, 28, 0.2);
+        }
+
+        /* Hidden input for selected payment */
+        #selectedPayment {
+            display: none;
+        }
+
+        /* Error message */
+        .error-message {
+            color: #B91C1C;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 768px) {
+            .payment-container {
+                padding: 2.5rem;
+                margin: 15px;
+                border-radius: 20px;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .payment-header h1 {
+                font-size: 2.2rem;
+            }
+            
+            .form-group h5 {
+                font-size: 1.3rem;
+            }
+            
+            .section-title {
+                font-size: 1.2rem;
+            }
+            
+            .submit-btn {
+                padding: 1.3rem;
+            }
+
+            .modal-content {
+                padding: 1.5rem;
+            }
+
+            .modal-title {
+                font-size: 1.3rem;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .payment-container {
+                padding: 1.8rem;
+                margin: 10px;
+                border-radius: 16px;
+            }
+            
+            .payment-header {
+                margin-bottom: 2rem;
+            }
+            
+            .payment-header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .form-group h5 {
+                font-size: 1.2rem;
+                margin: 1rem 0 0.8rem;
+            }
+            
+            input, select, .search-field {
+                padding: 0.9rem;
+                font-size: 0.9rem;
+            }
+            
+            .submit-btn {
+                padding: 1.1rem;
+                font-size: 1rem;
+                margin-top: 1.5rem;
+            }
+            
+            .payment-link {
+                padding: 0.9rem;
+            }
+            
+            .badge {
+                padding: 0.2rem 0.6rem;
+                font-size: 0.7rem;
+            }
+            
+            .section-title {
+                font-size: 1.1rem;
+                margin-bottom: 0.8rem;
+            }
+            
+            .auto-generated-list {
+                max-height: 180px;
+            }
+
+            .modal-actions {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .modal-btn {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .payment-container {
+                padding: 1.5rem;
+                margin: 8px;
+            }
+            
+            .payment-header h1 {
+                font-size: 1.6rem;
+            }
+            
+            .payment-header h1::after {
+                width: 50px;
+                height: 2px;
+            }
+            
+            .form-group {
+                gap: 0.5rem;
+            }
+            
+            .form-group h5 {
+                font-size: 1.1rem;
+                padding-bottom: 0.8rem;
+            }
+            
+            label {
+                font-size: 0.85rem;
+            }
+            
+            input, select, .search-field {
+                padding: 0.8rem;
+                font-size: 0.85rem;
+                border-radius: 10px;
+            }
+            
+            .search-icon {
+                left: 0.8rem;
+                font-size: 1rem;
+            }
+            
+            .search-field {
+                padding-left: 2.4rem;
+            }
+            
+            .submit-btn {
+                padding: 1rem;
+                font-size: 0.95rem;
+                border-radius: 12px;
+            }
+            
+            .payment-link {
+                padding: 0.8rem;
+                font-size: 0.9rem;
+            }
+            
+            .link-icon {
+                font-size: 1rem;
+                margin-right: 0.8rem;
+                width: 24px;
+            }
+            
+            .badge {
+                padding: 0.15rem 0.5rem;
+                font-size: 0.65rem;
+            }
+            
+            .section-title {
+                font-size: 1rem;
+                padding-left: 0.8rem;
+            }
+
+            .modal-content {
+                padding: 1.2rem;
+            }
+
+            .modal-title {
+                font-size: 1.2rem;
+            }
+
+            .payment-info {
+                padding: 0.8rem;
+            }
+
+            .payment-info .link-icon {
+                width: 32px;
+                height: 32px;
+                font-size: 1.2rem;
+            }
+        }
+
+        /* Touch-friendly adjustments */
+        @media (hover: none) {
+            .payment-link {
+                padding: 1.2rem 1rem;
+            }
+            
+            .submit-btn {
+                padding: 1.2rem;
+            }
+            
+            input, select, .search-field {
+                padding: 1rem;
+            }
+
+            .badge {
+                padding: 0.3rem 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-container">
+        <div class="payment-header">
+            <h1>Pay Point</h1>
+        </div>
+        
+        <form class="payment-form" id="paymentForm">
+            <div class="form-group">
+                <h5>Payment Details</h5>
+                
+                <div class="payment-options">
+                    <h3 class="section-title">Payment Options</h3>
+                    
+                    <!-- Search Field -->
+                    <div class="search-container">
+                        <span class="search-icon"></span>
+                        <input type="text" class="search-field" id="paymentSearch" placeholder="Search payment options...">
+                    </div>
+                    
+                    <div class="dropdown-container">
+                        <ul class="auto-generated-list" id="paymentList">
+                            <li>
+                                <div class="payment-link" data-payment="CONTROLLER" data-icon="🔄">
+                                    <span class="link-icon">🔄</span>
+                                    CONTROLLER
+                                    <button type="button" class="badge">
+                                        <span class="badge-text">PAY</span>
+                                        <span class="badge-dots"></span>
+                                    </button>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="payment-link" data-payment="ECG" data-icon="⚡">
+                                    <span class="link-icon">⚡</span>
+                                    ECG
+                                    <button type="button" class="badge">
+                                        <span class="badge-text">PAY</span>
+                                        <span class="badge-dots"></span>
+                                    </button>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="payment-link" data-payment="GHANA WATER" data-icon="💧">
+                                    <span class="link-icon">💧</span>
+                                    GHANA WATER
+                                    <button type="button" class="badge">
+                                        <span class="badge-text">PAY</span>
+                                        <span class="badge-dots"></span>
+                                    </button>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="payment-link" data-payment="GHANA PAY" data-icon="🇬🇭">
+                                    <span class="link-icon">🇬🇭</span>
+                                    GHANA PAY
+                                    <button type="button" class="badge">
+                                        <span class="badge-text">PAY</span>
+                                        <span class="badge-dots"></span>
+                                    </button>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="payment-link" data-payment="BANK TRANSFER" data-icon="🏦">
+                                    <span class="link-icon">🏦</span>
+                                    BANK TRANSFER
+                                    <button type="button" class="badge">
+                                        <span class="badge-text">PAY</span>
+                                        <span class="badge-dots"></span>
+                                    </button>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="payment-link" data-payment="GHANA HEALTH SERVICE" data-icon="🏥">
+                                    <span class="link-icon">🏥</span>
+                                    GHANA HEALTH SERVICE
+                                    <button type="button" class="badge">
+                                        <span class="badge-text">PAY</span>
+                                        <span class="badge-dots"></span>
+                                    </button>
+                                </div>
+                            </li>
+                        </ul>
+                        <div class="no-results" id="noResults">No payment options found</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="staffId">Staff ID</label>
+                    <input type="text" id="staffId" placeholder="Enter Staff ID" required>
+                    <div class="error-message" id="staffIdError">Please enter a valid Staff ID</div>
+                </div>
+            </div>
+            
+            <input type="hidden" id="selectedPayment" name="selectedPayment">
+        </form>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="payment-modal" id="paymentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Confirm Payment</h3>
+                <button type="button" class="close-modal" id="closeModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="payment-info">
+                    <span class="link-icon" id="modalIcon">🔄</span>
+                    <div class="payment-info-text">
+                        <div class="payment-info-title" id="modalTitle">CONTROLLER</div>
+                        <div class="payment-info-subtitle">You are about to make a payment</div>
+                        <div class="staff-id-display">Staff ID: <span id="modalStaffId"></span></div>
+                    </div>
+                </div>
+                <p>Please confirm that you want to proceed with this payment.</p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="modal-btn modal-btn-secondary" id="cancelPayment">Cancel</button>
+                <button type="button" class="modal-btn modal-btn-primary" id="confirmPayment">
+                    <span>Confirm Payment</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Form submission handling
+        document.getElementById('paymentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const btn = this.querySelector('.submit-btn');
+            
+            // Show processing state
+            btn.classList.add('processing');
+            
+            // Simulate payment processing (replace with actual API call)
+            setTimeout(() => {
+                btn.classList.remove('processing');
+                alert('Payment successful!');
+            }, 2000);
+        });
+
+        // Search functionality
+        document.getElementById('paymentSearch').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const paymentItems = document.querySelectorAll('#paymentList li');
+            const noResultsMessage = document.getElementById('noResults');
+            let resultsFound = false;
+            
+            paymentItems.forEach(item => {
+                const paymentText = item.textContent.toLowerCase();
+                if (paymentText.includes(searchTerm)) {
+                    item.style.display = 'block';
+                    resultsFound = true;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Show/hide no results message
+            if (resultsFound) {
+                noResultsMessage.style.display = 'none';
+            } else {
+                noResultsMessage.style.display = 'block';
+            }
+        });
+
+        // Payment option selection
+        document.querySelectorAll('.payment-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (e.target.classList.contains('badge') || e.target.classList.contains('badge-text')) {
+                    return; // Don't select when clicking the pay button
+                }
+                
+                // Remove selected class from all links
+                document.querySelectorAll('.payment-link').forEach(l => {
+                    l.classList.remove('selected');
+                });
+                
+                // Add selected class to clicked link
+                this.classList.add('selected');
+                
+                // Update hidden input with selected payment
+                const paymentMethod = this.dataset.payment;
+                document.getElementById('selectedPayment').value = paymentMethod;
+                
+                // Update search field with selected payment
+                const searchField = document.getElementById('paymentSearch');
+                searchField.value = paymentMethod;
+                searchField.classList.add('highlighted');
+                
+                // Animate the highlight
+                setTimeout(() => {
+                    searchField.classList.remove('highlighted');
+                    setTimeout(() => {
+                        searchField.classList.add('highlighted');
+                    }, 200);
+                }, 200);
+            });
+        });
+
+        // Validate Staff ID
+        function validateStaffId() {
+            const staffIdInput = document.getElementById('staffId');
+            const staffIdError = document.getElementById('staffIdError');
+            
+            if (!staffIdInput.value.trim()) {
+                staffIdError.style.display = 'block';
+                staffIdError.textContent = 'Please enter a Staff ID';
+                return false;
+            }
+            
+            // You can add more validation rules here if needed
+            // For example, checking if the Staff ID follows a specific format
+            
+            staffIdError.style.display = 'none';
+            return true;
+        }
+
+        // Pay button functionality
+        document.querySelectorAll('.badge').forEach(badge => {
+            badge.addEventListener('click', function(e) {
+                e.stopPropagation(); // Prevent triggering the payment-link click
+                
+                // Validate Staff ID first
+                if (!validateStaffId()) {
+                    // Focus on the staff ID input if validation fails
+                    document.getElementById('staffId').focus();
+                    return;
+                }
+                
+                // Get payment info from parent element
+                const paymentLink = this.closest('.payment-link');
+                const paymentMethod = paymentLink.dataset.payment;
+                const paymentIcon = paymentLink.dataset.icon;
+                const staffId = document.getElementById('staffId').value.trim();
+                
+                // Update search field with selected payment if not already done
+                const searchField = document.getElementById('paymentSearch');
+                if (searchField.value !== paymentMethod) {
+                    searchField.value = paymentMethod;
+                    searchField.classList.add('highlighted');
+                }
+                
+                // Select the payment option visually
+                document.querySelectorAll('.payment-link').forEach(l => {
+                    l.classList.remove('selected');
+                });
+                paymentLink.classList.add('selected');
+                
+                // Show processing state on the button
+                this.classList.add('processing');
+                
+                // Open payment modal
+                setTimeout(() => {
+                    // Remove processing state
+                    this.classList.remove('processing');
+                    
+                    // Set modal content
+                    document.getElementById('modalIcon').textContent = paymentIcon;
+                    document.getElementById('modalTitle').textContent = paymentMethod;
+                    document.getElementById('modalStaffId').textContent = staffId;
+                    
+                    // Show modal
+                    document.getElementById('paymentModal').style.display = 'flex';
+                }, 500);
+            });
+        });
+
+        // Modal functionality
+        document.getElementById('closeModal').addEventListener('click', function() {
+            document.getElementById('paymentModal').style.display = 'none';
+        });
+
+        document.getElementById('cancelPayment').addEventListener('click', function() {
+            document.getElementById('paymentModal').style.display = 'none';
+        });
+
+        document.getElementById('confirmPayment').addEventListener('click', function() {
+            // Get the staff ID and payment method for processing
+            const staffId = document.getElementById('staffId').value.trim();
+            const paymentMethod = document.getElementById('modalTitle').textContent;
+            
+            // Hide modal
+            document.getElementById('paymentModal').style.display = 'none';
+            
+            // Show processing on main button
+            const submitBtn = document.querySelector('.submit-btn');
+            if (!submitBtn) {
+                // Create a submit button if it doesn't exist
+                const form = document.getElementById('paymentForm');
+                const newBtn = document.createElement('button');
+                newBtn.type = 'button';
+                newBtn.className = 'submit-btn';
+                newBtn.innerHTML = '<span class="btn-text">Processing Payment</span><span class="loading-dots"></span>';
+                form.appendChild(newBtn);
+                
+                newBtn.classList.add('processing');
+                
+                // Simulate payment processing with the staff ID
+                setTimeout(() => {
+                    newBtn.classList.remove('processing');
+                    newBtn.querySelector('.btn-text').textContent = 'Payment Complete';
+                    
+                    // Log the payment details (replace with actual API call)
+                    console.log('Payment processed:', {
+                        paymentMethod: paymentMethod,
+                        staffId: staffId,
+                        timestamp: new Date().toISOString()
+                    });
+                    
+                    alert(`Payment successful!\nStaff ID: ${staffId}\nPayment Method: ${paymentMethod}`);
+                }, 2000);
+            } else {
+                submitBtn.classList.add('processing');
+                
+                // Simulate payment processing with the staff ID
+                setTimeout(() => {
+                    submitBtn.classList.remove('processing');
+                    
+                    // Log the payment details (replace with actual API call)
+                    console.log('Payment processed:', {
+                        paymentMethod: paymentMethod,
+                        staffId: staffId,
+                        timestamp: new Date().toISOString()
+                    });
+                    
+                    alert(`Payment successful!\nStaff ID: ${staffId}\nPayment Method: ${paymentMethod}`);
+                }, 2000);
+            }
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('paymentModal');
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // Adjust for viewport height on mobile
+        function adjustForMobile() {
+            if (window.innerWidth <= 480) {
+                document.querySelector('.auto-generated-list').style.maxHeight = (window.innerHeight * 0.25) + 'px';
+            } else {
+                document.querySelector('.auto-generated-list').style.maxHeight = '200px';
+            }
+        }
+
+        // Run on load and resize
+        window.addEventListener('load', adjustForMobile);
+        window.addEventListener('resize', adjustForMobile);
+    </script>
+</body>
+</html>
